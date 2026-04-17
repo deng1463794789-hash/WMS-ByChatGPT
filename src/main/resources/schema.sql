@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS wms_product (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sku VARCHAR(64) NOT NULL UNIQUE,
+    name VARCHAR(128) NOT NULL,
+    unit VARCHAR(32) NOT NULL,
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    safe_stock INTEGER NOT NULL DEFAULT 0,
+    remark VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS wms_stock_record (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    biz_type VARCHAR(32) NOT NULL,
+    change_quantity INTEGER NOT NULL,
+    after_quantity INTEGER NOT NULL,
+    biz_no VARCHAR(64),
+    remark VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES wms_product(id)
+);
