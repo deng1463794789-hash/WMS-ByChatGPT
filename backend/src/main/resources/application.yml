@@ -1,28 +1,18 @@
-server:
-  port: 8080
-
 spring:
   application:
-    name: local-warehouse-backend
-  datasource:
-    driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:./data/warehouse.db
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      continue-on-error: false
+    name: wms-backend
+  profiles:
+    active: dev
   jackson:
     default-property-inclusion: non_null
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto
 
 logging:
   level:
-    com.localwarehouse.backend: info
+    com.wms: info

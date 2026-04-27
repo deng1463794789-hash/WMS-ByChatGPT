@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS wms_product (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    sku VARCHAR(64) NOT NULL UNIQUE,
+    name VARCHAR(128) NOT NULL,
+    unit VARCHAR(32) NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    safe_stock INT NOT NULL DEFAULT 0,
+    remark VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS wms_stock_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    biz_type VARCHAR(32) NOT NULL,
+    change_quantity INT NOT NULL,
+    after_quantity INT NOT NULL,
+    biz_no VARCHAR(64) DEFAULT NULL,
+    remark VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_wms_stock_record_product FOREIGN KEY (product_id) REFERENCES wms_product (id)
+);

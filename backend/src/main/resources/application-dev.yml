@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${WMS_DB_HOST:127.0.0.1}:${WMS_DB_PORT:3306}/${WMS_DB_NAME:wms_by_chatgpt}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${WMS_DB_USERNAME:root}
+    password: ${WMS_DB_PASSWORD:root}
+  data:
+    redis:
+      host: ${WMS_REDIS_HOST:127.0.0.1}
+      port: ${WMS_REDIS_PORT:6379}
+      database: ${WMS_REDIS_DATABASE:0}
+      password: ${WMS_REDIS_PASSWORD:}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-mysql.sql
+      continue-on-error: false
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
