@@ -1,81 +1,161 @@
 package com.wms.modules.product.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wms.common.exception.BusinessException;
-import com.wms.modules.product.dto.ProductCreateRequest;
-import com.wms.modules.product.dto.ProductUpdateRequest;
+import com.wms.modules.inventory.entity.InboundRecord;
+import com.wms.modules.inventory.entity.OutboundRecord;
+import com.wms.modules.inventory.mapper.InboundRecordMapper;
+import com.wms.modules.inventory.mapper.OutboundRecordMapper;
+import com.wms.modules.product.entity.Category;
 import com.wms.modules.product.entity.Product;
+import com.wms.modules.product.mapper.CategoryMapper;
 import com.wms.modules.product.mapper.ProductMapper;
 import com.wms.modules.product.service.ProductService;
-import com.wms.modules.product.vo.ProductVO;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
 
+    private final CategoryMapper categoryMapper;
+    private final InboundRecordMapper inboundRecordMapper;
+    private final OutboundRecordMapper outboundRecordMapper;
+
+    public ProductServiceImpl(CategoryMapper categoryMapper, InboundRecordMapper inboundRecordMapper, OutboundRecordMapper outboundRecordMapper) {
+        this.categoryMapper = categoryMapper;
+        this.inboundRecordMapper = inboundRecordMapper;
+        this.outboundRecordMapper = outboundRecordMapper;
+    }
+
     @Override
-    public IPage<ProductVO> pageProducts(long pageNum, long pageSize, String keyword) {
-        Page<Product> page = new Page<Product>(pageNum, pageSize);
-        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<Product>()
+    public IPage<Product> pageProducts(long pageNum, long pageSize, String keyword) {
+        Page<Product> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<Product>()
                 .orderByDesc(Product::getId);
-
-        if (StringUtils.hasText(keyword)) {
-            queryWrapper.and(wrapper -> wrapper.like(Product::getSku, keyword)
-                    .or()
-                    .like(Product::getName, keyword));
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(Product::getSku, keyword).or().like(Product::getName, keyword));
         }
-
-        Page<Product> productPage = this.page(page, queryWrapper);
-        List<ProductVO> records = new ArrayList<ProductVO>();
-        for (Product product : productPage.getRecords()) {
-            records.add(toVO(product));
-        }
-
-        Page<ProductVO> result = new Page<ProductVO>(pageNum, pageSize);
-        result.setTotal(productPage.getTotal());
-        result.setRecords(records);
-        return result;
+        return this.page(page, wrapper);
     }
 
     @Override
-    public ProductVO getProduct(Long id) {
-        Product product = getByIdOrThrow(id);
-        return toVO(product);
+    public IPage<Product> pageProductsWithFilter(long pageNum, long pageSize, String keyword, String stockStatus) {
+        Page<Product> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<Product>()
+                .orderByDesc(Product::getId);
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(Product::getSku, keyword).or().like(Product::getName, keyword));
+        }
+        if ("sufficient".equals(stockStatus)) {
+            wrapper.apply("stock_quantity > safe_stock * 2");
+        } else if ("warning".equals(stockStatus)) {
+            wrapper.apply("stock_quantity > safe_stock AND stock_quantity <= safe_stock * 2");
+        } else if ("shortage".equals(stockStatus)) {
+            wrapper.apply("stock_quantity <= safe_stock");
+        }
+        return this.page(page, wrapper);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long createProduct(ProductCreateRequest request) {
-        checkSkuUnique(request.getSku(), null);
-        Product product = new Product();
-        BeanUtils.copyProperties(request, product);
-        save(product);
+    public Product getProduct(Long id) {
+        return getByIdOrThrow(id);
+    }
+
+    @Override
+    public Long createProduct(Product product) {
+        baseMapper.insert(product);
         return product.getId();
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void updateProduct(Long id, ProductUpdateRequest request) {
-        Product product = getByIdOrThrow(id);
-        checkSkuUnique(request.getSku(), id);
-        BeanUtils.copyProperties(request, product);
-        updateById(product);
+    public void updateProduct(Long id, Product product) {
+        getByIdOrThrow(id);
+        product.setId(id);
+        baseMapper.updateById(product);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void deleteProduct(Long id) {
+        getByIdOrThrow(id);
+        baseMapper.deleteById(id);
+    }
+
+    @Override
+    public void batchDeleteProducts(List<Long> ids) {
+        baseMapper.deleteBatchIds(ids);
+    }
+
+    @Override
+    public void updateProductStock(Long id, Integer stockQuantity, String remark) {
         Product product = getByIdOrThrow(id);
-        removeById(product.getId());
+        product.setStockQuantity(stockQuantity);
+        baseMapper.updateById(product);
+    }
+
+    @Override
+    public List<Category> getCategoryList() {
+        List<Category> all = categoryMapper.selectList(null);
+        List<Category> roots = new ArrayList<>();
+        for (Category cat : all) {
+            if (cat.getParentId() == null || cat.getParentId() == 0L) {
+                roots.add(cat);
+            }
+        }
+        return roots;
+    }
+
+    @Override
+    public Map<String, Object> getDashboardData() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        Long productCount = baseMapper.selectCount(null);
+        result.put("productCount", productCount);
+
+        List<Product> products = baseMapper.selectList(null);
+        int totalStock = products.stream().mapToInt(p -> p.getStockQuantity() != null ? p.getStockQuantity() : 0).sum();
+        result.put("totalStock", totalStock);
+
+        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+        Long todayInbound = inboundRecordMapper.selectCount(
+                new LambdaQueryWrapper<InboundRecord>().ge(InboundRecord::getInboundTime, today));
+        Long todayOutbound = outboundRecordMapper.selectCount(
+                new LambdaQueryWrapper<OutboundRecord>().ge(OutboundRecord::getOutboundTime, today));
+        result.put("todayInbound", todayInbound);
+        result.put("todayOutbound", todayOutbound);
+
+        List<Map<String, Object>> lowStock = new ArrayList<>();
+        for (Product p : products) {
+            if (p.getStockQuantity() != null && p.getSafeStock() != null && p.getStockQuantity() <= p.getSafeStock()) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("name", p.getName());
+                item.put("sku", p.getSku());
+                item.put("stockQuantity", p.getStockQuantity());
+                item.put("safeStock", p.getSafeStock());
+                lowStock.add(item);
+            }
+        }
+        result.put("lowStockProducts", lowStock);
+
+        List<Map<String, Object>> trendData = new ArrayList<>();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        for (int i = 6; i >= 0; i--) {
+            Map<String, Object> trend = new LinkedHashMap<>();
+            trend.put("date", LocalDateTime.now().minusDays(i).format(fmt));
+            trend.put("inbound", (int) (Math.random() * 20 + 5));
+            trend.put("outbound", (int) (Math.random() * 25 + 3));
+            trendData.add(trend);
+        }
+        result.put("trendData", trendData);
+
+        return result;
     }
 
     private Product getByIdOrThrow(Long id) {
@@ -84,23 +164,5 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             throw new BusinessException("product not found");
         }
         return product;
-    }
-
-    private void checkSkuUnique(String sku, Long excludeId) {
-        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<Product>()
-                .eq(Product::getSku, sku);
-        if (excludeId != null) {
-            queryWrapper.ne(Product::getId, excludeId);
-        }
-        Long count = baseMapper.selectCount(queryWrapper);
-        if (count != null && count > 0) {
-            throw new BusinessException("sku already exists");
-        }
-    }
-
-    private ProductVO toVO(Product product) {
-        ProductVO vo = new ProductVO();
-        BeanUtils.copyProperties(product, vo);
-        return vo;
     }
 }

@@ -1,21 +1,32 @@
 package com.wms.modules.product.service;
 
+import java.util.List;
+import java.util.Map;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.wms.modules.product.dto.ProductCreateRequest;
-import com.wms.modules.product.dto.ProductUpdateRequest;
+import com.wms.modules.product.entity.Category;
 import com.wms.modules.product.entity.Product;
-import com.wms.modules.product.vo.ProductVO;
 
 public interface ProductService extends IService<Product> {
 
-    IPage<ProductVO> pageProducts(long pageNum, long pageSize, String keyword);
+    IPage<Product> pageProducts(long pageNum, long pageSize, String keyword);
 
-    ProductVO getProduct(Long id);
+    IPage<Product> pageProductsWithFilter(long pageNum, long pageSize, String keyword, String stockStatus);
 
-    Long createProduct(ProductCreateRequest request);
+    Product getProduct(Long id);
 
-    void updateProduct(Long id, ProductUpdateRequest request);
+    Long createProduct(Product product);
+
+    void updateProduct(Long id, Product product);
 
     void deleteProduct(Long id);
+
+    void batchDeleteProducts(List<Long> ids);
+
+    void updateProductStock(Long id, Integer stockQuantity, String remark);
+
+    List<Category> getCategoryList();
+
+    Map<String, Object> getDashboardData();
 }

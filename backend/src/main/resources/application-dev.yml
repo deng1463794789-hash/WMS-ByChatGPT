@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+wms:
+  jwt:
+    secret: VGhpcy1Jcy1XTVMtU2VjdXJlLUtleS1Gb3ItSldULU1pbmltdW0tMjU2LUJpdHM=
+    expiration: 86400000
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

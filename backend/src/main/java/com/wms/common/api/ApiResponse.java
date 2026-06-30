@@ -27,6 +27,10 @@ public class ApiResponse<T> {
         return new ApiResponse<T>(code, message, null);
     }
 
+    public static <T> ApiResponse<T> error(Integer code, String message) {
+        return fail(code, message);
+    }
+
     public Integer getCode() {
         return code;
     }
