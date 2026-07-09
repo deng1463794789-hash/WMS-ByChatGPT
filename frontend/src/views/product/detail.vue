@@ -29,6 +29,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'ProductDetail' })
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProductDetail } from '@/api/product'

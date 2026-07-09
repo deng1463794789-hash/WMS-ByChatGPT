@@ -1,43 +1,69 @@
 <template>
-  <div class="dashboard">
-    <el-row :gutter="16" class="stats-row">
+  <div class="dashboard app-container">
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <span class="hero-kicker">WMS Command Center</span>
+        <h1>仓储运营总览</h1>
+        <p>实时掌握商品、库存、入库与出库状态，快速定位低库存风险。</p>
+      </div>
+      <div class="hero-actions">
+        <el-button type="primary" size="large" @click="$router.push('/inventory/inbound')">
+          <el-icon><Download /></el-icon>新建入库
+        </el-button>
+        <el-button size="large" @click="$router.push('/product/list')">
+          <el-icon><GoodsFilled /></el-icon>商品管理
+        </el-button>
+      </div>
+      <div class="hero-orbit orbit-a" />
+      <div class="hero-orbit orbit-b" />
+    </section>
+
+    <el-row :gutter="18" class="stats-row">
       <el-col :xs="24" :sm="12" :lg="6" v-for="(stat, idx) in statsCards" :key="stat.label">
-        <el-card shadow="hover" class="stat-card" :style="{ animationDelay: idx * 0.08 + 's' }">
-          <div class="stat-content">
-            <div class="stat-icon" :style="{ background: stat.bgColor }">
-              <el-icon :size="28" :color="stat.iconColor"><component :is="stat.icon" /></el-icon>
+        <el-card shadow="never" class="stat-card" :style="{ animationDelay: idx * 0.07 + 's' }">
+          <div class="stat-topline">
+            <div class="stat-icon" :class="stat.tone">
+              <el-icon :size="24"><component :is="stat.icon" /></el-icon>
             </div>
-            <div class="stat-info">
-              <div class="stat-label">{{ stat.label }}</div>
-              <div class="stat-value">
-                <span class="count-number">{{ animatedValues[stat.key] }}</span>
-              </div>
-            </div>
+            <span>{{ stat.badge }}</span>
+          </div>
+          <div class="stat-label">{{ stat.label }}</div>
+          <div class="stat-value">
+            <span class="count-number">{{ animatedValues[stat.key] }}</span>
+          </div>
+          <div class="stat-trend">
+            <span :class="stat.trendType">{{ stat.trend }}</span>
+            <small>{{ stat.hint }}</small>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="content-row">
-      <el-col :xs="24" :lg="14">
-        <el-card shadow="hover" class="chart-card">
+    <el-row :gutter="18" class="content-row">
+      <el-col :xs="24" :lg="15">
+        <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span>入库/出库趋势</span>
+              <div>
+                <strong>近 7 日吞吐趋势</strong>
+                <small>入库与出库数量对比</small>
+              </div>
               <div class="chart-legend">
-                <span class="legend-dot inbound"></span>入库
-                <span class="legend-dot outbound"></span>出库
+                <span><i class="legend-dot inbound" />入库</span>
+                <span><i class="legend-dot outbound" />出库</span>
               </div>
             </div>
           </template>
           <div class="chart-container">
-            <div class="fake-chart" ref="chartRef">
+            <div class="fake-chart">
               <div v-for="(item, idx) in dashboardData.trendData" :key="idx" class="chart-bar-group">
-                <div class="bar inbound" :style="{ height: animatedBars[idx]?.inbound + '%' || '0%' }">
-                  <span class="bar-tip">{{ item.inbound }}</span>
-                </div>
-                <div class="bar outbound" :style="{ height: animatedBars[idx]?.outbound + '%' || '0%' }">
-                  <span class="bar-tip">{{ item.outbound }}</span>
+                <div class="bar-pair">
+                  <div class="bar inbound" :style="{ height: animatedBars[idx]?.inbound + '%' || '0%' }">
+                    <span class="bar-tip">{{ item.inbound }}</span>
+                  </div>
+                  <div class="bar outbound" :style="{ height: animatedBars[idx]?.outbound + '%' || '0%' }">
+                    <span class="bar-tip">{{ item.outbound }}</span>
+                  </div>
                 </div>
                 <span class="bar-label">{{ item.date.slice(5) }}</span>
               </div>
@@ -45,50 +71,56 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="24" :lg="10">
-        <el-card shadow="hover" class="warn-card">
+
+      <el-col :xs="24" :lg="9">
+        <el-card shadow="never" class="warn-card">
           <template #header>
             <div class="card-header">
-              <span>库存预警</span>
-              <el-tag type="danger" size="small">{{ dashboardData.lowStockProducts.length }}条</el-tag>
+              <div>
+                <strong>库存预警</strong>
+                <small>低于安全库存的商品</small>
+              </div>
+              <el-tag type="danger" size="small">{{ dashboardData.lowStockProducts.length }} 条</el-tag>
             </div>
           </template>
-          <el-table :data="dashboardData.lowStockProducts" size="small" max-height="300" :show-header="true">
-            <el-table-column prop="name" label="商品名称" show-overflow-tooltip />
-            <el-table-column prop="sku" label="商品编码" width="100" />
-            <el-table-column prop="stockQuantity" label="当前库存" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag type="danger" size="small">{{ row.stockQuantity }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="safeStock" label="安全库存" width="80" align="center" />
-          </el-table>
+          <div v-if="dashboardData.lowStockProducts.length" class="warning-list">
+            <div class="warning-item" v-for="item in dashboardData.lowStockProducts.slice(0, 5)" :key="item.sku">
+              <div class="warning-main">
+                <span>{{ item.name }}</span>
+                <small>{{ item.sku }}</small>
+              </div>
+              <div class="warning-stock">
+                <strong>{{ item.stockQuantity }}</strong>
+                <span>/ {{ item.safeStock }}</span>
+              </div>
+            </div>
+          </div>
+          <el-empty v-else description="暂无库存预警" :image-size="88" />
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="shortcut-row">
+    <el-row :gutter="18" class="shortcut-row">
       <el-col :span="24">
-        <el-card shadow="hover">
+        <el-card shadow="never" class="shortcut-card">
           <template #header>
-            <span>快捷入口</span>
+            <div class="card-header">
+              <div>
+                <strong>高频操作</strong>
+                <small>减少模块跳转成本</small>
+              </div>
+            </div>
           </template>
           <div class="shortcut-list">
-            <div class="shortcut-item" @click="$router.push('/product/list')">
-              <div class="shortcut-icon"><el-icon :size="22"><CirclePlus /></el-icon></div>
-              <span>新增商品</span>
-            </div>
-            <div class="shortcut-item" @click="$router.push('/inventory/inbound')">
-              <div class="shortcut-icon"><el-icon :size="22"><Download /></el-icon></div>
-              <span>入库操作</span>
-            </div>
-            <div class="shortcut-item" @click="$router.push('/inventory/outbound')">
-              <div class="shortcut-icon"><el-icon :size="22"><Upload /></el-icon></div>
-              <span>出库操作</span>
-            </div>
-            <div class="shortcut-item" @click="$router.push('/inventory/stock')">
-              <div class="shortcut-icon"><el-icon :size="22"><Search /></el-icon></div>
-              <span>库存查询</span>
+            <div class="shortcut-item" v-for="shortcut in shortcuts" :key="shortcut.title" @click="$router.push(shortcut.path)">
+              <div class="shortcut-icon" :class="shortcut.tone">
+                <el-icon :size="22"><component :is="shortcut.icon" /></el-icon>
+              </div>
+              <div>
+                <span>{{ shortcut.title }}</span>
+                <small>{{ shortcut.desc }}</small>
+              </div>
+              <el-icon class="shortcut-arrow"><ArrowRight /></el-icon>
             </div>
           </div>
         </el-card>
@@ -98,6 +130,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'Dashboard' })
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { getDashboardData } from '@/api/product'
 
@@ -106,8 +140,6 @@ interface TrendItem {
   inbound: number
   outbound: number
 }
-
-const chartRef = ref<HTMLElement>()
 
 const dashboardData = ref({
   productCount: 0,
@@ -128,11 +160,18 @@ const animatedValues = reactive({
 const animatedBars = ref<Array<{ inbound: number; outbound: number }>>([])
 
 const statsCards = [
-  { key: 'productCount', label: '商品总数', icon: 'GoodsFilled', iconColor: '#409EFF', bgColor: '#e6f7ff' },
-  { key: 'totalStock', label: '库存总量', icon: 'Box', iconColor: '#67C23A', bgColor: '#f0f9eb' },
-  { key: 'todayInbound', label: '今日入库', icon: 'Download', iconColor: '#E6A23C', bgColor: '#fdf6ec' },
-  { key: 'todayOutbound', label: '今日出库', icon: 'Upload', iconColor: '#F56C6C', bgColor: '#fef0f0' }
+  { key: 'productCount', label: '商品总数', icon: 'GoodsFilled', tone: 'blue', badge: 'SKU', trend: '+12%', trendType: 'up', hint: '较上周' },
+  { key: 'totalStock', label: '库存总量', icon: 'Box', tone: 'green', badge: 'Stock', trend: '稳定', trendType: 'flat', hint: '库存水位' },
+  { key: 'todayInbound', label: '今日入库', icon: 'Download', tone: 'amber', badge: 'Inbound', trend: '+8%', trendType: 'up', hint: '日内变化' },
+  { key: 'todayOutbound', label: '今日出库', icon: 'Upload', tone: 'rose', badge: 'Outbound', trend: '-3%', trendType: 'down', hint: '日内变化' }
 ] as const
+
+const shortcuts = [
+  { title: '新增商品', desc: '录入 SKU 与安全库存', icon: 'CirclePlus', path: '/product/list', tone: 'blue' },
+  { title: '入库操作', desc: '采购、退货、调拨入库', icon: 'Download', path: '/inventory/inbound', tone: 'green' },
+  { title: '出库操作', desc: '销售、退供、调拨出库', icon: 'Upload', path: '/inventory/outbound', tone: 'amber' },
+  { title: '库存查询', desc: '查看实时库存和预警', icon: 'Search', path: '/inventory/stock', tone: 'rose' }
+]
 
 const maxTrend = computed(() => {
   let max = 1
@@ -200,225 +239,445 @@ onMounted(async () => {
     }
   }
   nextTick(() => {
-    animateNumber('productCount', dashboardData.value.productCount, 600)
-    animateNumber('totalStock', dashboardData.value.totalStock, 800)
-    animateNumber('todayInbound', dashboardData.value.todayInbound, 400)
-    animateNumber('todayOutbound', dashboardData.value.todayOutbound, 400)
-    setTimeout(animateBars, 300)
+    animateNumber('productCount', dashboardData.value.productCount, 650)
+    animateNumber('totalStock', dashboardData.value.totalStock, 850)
+    animateNumber('todayInbound', dashboardData.value.todayInbound, 520)
+    animateNumber('todayOutbound', dashboardData.value.todayOutbound, 520)
+    setTimeout(animateBars, 260)
   })
 })
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/variables.scss' as *;
+
 .dashboard {
-  .stats-row {
-    margin-bottom: 16px;
+  .hero-panel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 170px;
+    margin-bottom: 18px;
+    padding: 30px;
+    overflow: hidden;
+    border-radius: 30px;
+    color: #fff;
+    background:
+      linear-gradient(135deg, rgba(15, 27, 45, 0.96), rgba(30, 64, 175, 0.92)),
+      radial-gradient(circle at 78% 26%, rgba(20, 184, 166, 0.45), transparent 30%);
+    box-shadow: 0 26px 70px rgba(15, 23, 42, 0.2);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+
+    .hero-kicker {
+      display: inline-flex;
+      margin-bottom: 13px;
+      padding: 7px 11px;
+      color: rgba(226, 232, 240, 0.86);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    p {
+      max-width: 520px;
+      margin: 12px 0 0;
+      color: rgba(226, 232, 240, 0.72);
+      line-height: 1.8;
+    }
+  }
+
+  .hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hero-orbit {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .orbit-a {
+    width: 220px;
+    height: 220px;
+    right: -44px;
+    top: -70px;
+
+  }
+
+  .orbit-b {
+    width: 130px;
+    height: 130px;
+    right: 185px;
+    bottom: -54px;
+
+  }
+
+  .stats-row,
+  .content-row {
+    margin-bottom: 18px;
   }
 
   .stat-card {
-    cursor: pointer;
-    transition: all 0.3s ease;
-    animation: cardSlideUp 0.5s ease-out both;
+    min-height: 166px;
+    animation: cardRise 0.48s $ease-out both;
 
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .stat-content {
+    .stat-topline {
       display: flex;
       align-items: center;
-      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 18px;
 
-      .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.3s ease;
-      }
-
-      .stat-info {
-        .stat-label {
-          font-size: 13px;
-          color: #909399;
-          margin-bottom: 4px;
-        }
-
-        .stat-value {
-          font-size: 28px;
-          font-weight: 700;
-          color: #303133;
-          font-variant-numeric: tabular-nums;
-        }
+      > span {
+        color: $text-secondary;
+        font-size: 12px;
+        font-weight: 800;
       }
     }
 
-    &:hover .stat-icon {
-      transform: scale(1.1);
-    }
-  }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      border-radius: 17px;
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
 
-  .content-row {
-    margin-bottom: 16px;
+      &.blue { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+      &.green { background: linear-gradient(135deg, #059669, #34d399); }
+      &.amber { background: linear-gradient(135deg, #d97706, #fbbf24); }
+      &.rose { background: linear-gradient(135deg, #e11d48, #fb7185); }
+    }
+
+    .stat-label {
+      color: $text-secondary;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin-top: 8px;
+      color: $text-primary;
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 12px;
+
+      span {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-weight: 900;
+      }
+
+      .up { color: #047857; background: rgba(16, 185, 129, 0.12); }
+      .down { color: #be123c; background: rgba(244, 63, 94, 0.1); }
+      .flat { color: #1d4ed8; background: rgba(29, 78, 216, 0.1); }
+
+      small {
+        color: $text-secondary;
+      }
+    }
   }
 
   .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-weight: 500;
+    gap: 12px;
+
+    strong {
+      display: block;
+      color: $text-primary;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    small {
+      display: block;
+      margin-top: 6px;
+      color: $text-secondary;
+      font-size: 12px;
+    }
   }
 
   .chart-legend {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    color: $text-secondary;
     font-size: 12px;
-    font-weight: 400;
-    color: #909399;
+    font-weight: 700;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     .legend-dot {
       display: inline-block;
       width: 10px;
       height: 10px;
-      border-radius: 2px;
-      margin-right: 4px;
+      border-radius: 50%;
 
-      &.inbound { background: #409EFF; }
-      &.outbound { background: #67C23A; }
+      &.inbound { background: #1d4ed8; }
+      &.outbound { background: #16a34a; }
     }
   }
 
   .chart-container {
-    padding: 10px 0;
+    padding: 10px 4px 4px;
   }
 
   .fake-chart {
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
-    height: 200px;
-    padding: 20px 10px 0;
-    border-bottom: 2px solid #e8e8e8;
-    margin: 0 10px;
+    height: 260px;
+    padding: 26px 14px 28px;
+    border-radius: 22px;
+    background:
+      linear-gradient(rgba(148, 163, 184, 0.11) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      rgba(248, 250, 252, 0.76);
+    background-size: 100% 52px, 52px 100%, auto;
+  }
+
+  .chart-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .bar-pair {
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    flex: 1;
+  }
+
+  .bar {
+    width: clamp(14px, 2vw, 24px);
+    min-height: 8px;
+    border-radius: 999px 999px 8px 8px;
+    transition: height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
 
-    &::before {
-      content: '';
+    &.inbound { background: linear-gradient(180deg, #3b82f6, #1d4ed8); }
+    &.outbound { background: linear-gradient(180deg, #34d399, #059669); }
+
+    .bar-tip {
       position: absolute;
-      left: 10px;
-      top: 20px;
-      bottom: 0;
-      width: 2px;
-      background: #e8e8e8;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      padding: 3px 6px;
+      color: #fff;
+      font-size: 11px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.86);
+      transition: opacity 0.2s ease;
     }
 
-    .chart-bar-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      position: relative;
-      z-index: 1;
+    &:hover .bar-tip {
+      opacity: 1;
+    }
+  }
 
-      .bar {
-        width: 22px;
-        border-radius: 4px 4px 0 0;
-        transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        position: relative;
+  .bar-label {
+    color: $text-secondary;
+    font-size: 11px;
+    font-weight: 700;
+  }
 
-        &.inbound { background: linear-gradient(180deg, #66b1ff, #409EFF); }
-        &.outbound { background: linear-gradient(180deg, #85ce61, #67C23A); }
+  .warning-list {
+    display: grid;
+    gap: 12px;
+  }
 
-        .bar-tip {
-          position: absolute;
-          top: -20px;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 10px;
-          color: #909399;
-          white-space: nowrap;
-          opacity: 0;
-          transition: opacity 0.3s ease 0.3s;
-        }
-      }
+  .warning-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px;
+    border-radius: 18px;
+    background: rgba(248, 250, 252, 0.82);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.2s $ease-out, background 0.2s ease;
 
-      &:hover .bar .bar-tip {
-        opacity: 1;
-      }
+    &:hover {
+      transform: translateX(4px);
+      background: rgba(255, 247, 237, 0.86);
+    }
+  }
 
-      .bar-label {
-        font-size: 10px;
-        color: #909399;
-        margin-top: 4px;
-      }
+  .warning-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    span {
+      color: $text-primary;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      margin-top: 5px;
+      color: $text-secondary;
+    }
+  }
+
+  .warning-stock {
+    flex-shrink: 0;
+    color: #be123c;
+
+    strong {
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    span {
+      color: $text-secondary;
+      font-size: 12px;
     }
   }
 
   .shortcut-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .shortcut-item {
     display: flex;
-    gap: 16px;
+    align-items: center;
+    gap: 13px;
+    min-height: 86px;
+    padding: 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    background: rgba(248, 250, 252, 0.72);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.22s $ease-out, box-shadow 0.22s ease, background 0.22s ease;
 
-    .shortcut-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      padding: 16px 28px;
-      border-radius: 10px;
-      transition: all 0.3s ease;
-      color: #606266;
-      flex: 1;
+    &:hover {
+      transform: translateY(-2px);
+      background: #fff;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.09);
 
-      .shortcut-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: #f5f7fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
+      .shortcut-arrow {
+        transform: translateX(3px);
+        opacity: 1;
       }
+    }
 
-      &:hover {
-        background: #ecf5ff;
-        color: #409EFF;
+    span {
+      display: block;
+      color: $text-primary;
+      font-weight: 900;
+    }
 
-        .shortcut-icon {
-          background: #409EFF;
-          color: #fff;
-        }
-      }
-
-      span {
-        font-size: 13px;
-        font-weight: 500;
-      }
+    small {
+      display: block;
+      margin-top: 6px;
+      color: $text-secondary;
+      font-size: 12px;
     }
   }
 
-  :deep(.el-card__body) {
-    padding-top: 0;
+  .shortcut-icon {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    border-radius: 17px;
+
+    &.blue { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+    &.green { background: linear-gradient(135deg, #059669, #34d399); }
+    &.amber { background: linear-gradient(135deg, #d97706, #fbbf24); }
+    &.rose { background: linear-gradient(135deg, #e11d48, #fb7185); }
   }
 
-  :deep(.el-table) {
-    --el-table-border-color: #ebeef5;
+  .shortcut-arrow {
+    margin-left: auto;
+    color: $text-secondary;
+    opacity: 0.55;
+    transition: transform 0.2s $ease-out, opacity 0.2s ease;
   }
 }
 
-@keyframes cardSlideUp {
+@keyframes cardRise {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(16px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes orbitPulse {
+  50% {
+    transform: translate3d(-12px, 10px, 0) scale(1.05);
+  }
+}
+
+@media (max-width: 1180px) {
+  .dashboard .shortcut-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard {
+    .hero-panel {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 22px;
+    }
+
+    .shortcut-list {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

@@ -11,8 +11,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { allRoutes } from '@/router/routes'
-import type { RouteRecordRaw } from 'vue-router'
+import { menuRoutes } from '@/router/routes'
+import type { MenuRouteRecord } from '@/router/routes'
 
 const route = useRoute()
 
@@ -25,7 +25,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
   const result: BreadcrumbItem[] = []
   const currentPath = route.path
 
-  const findBreadcrumbs = (routes: RouteRecordRaw[], basePath: string) => {
+  const findBreadcrumbs = (routes: MenuRouteRecord[], basePath: string) => {
     for (const r of routes) {
       const fullPath = (basePath + '/' + r.path).replace(/\/+/g, '/')
       if (r.meta?.hidden) continue
@@ -40,7 +40,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
     }
   }
 
-  findBreadcrumbs(allRoutes, '')
+  findBreadcrumbs(menuRoutes, '')
   return result
 })
 </script>

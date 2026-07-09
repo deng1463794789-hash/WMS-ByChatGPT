@@ -5,7 +5,7 @@ import { isMockEnabled, handleMockRequest } from '@/mock'
 import type { ApiResponse } from '@/types/api'
 
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_APP_BASE_API,
+  baseURL: import.meta.env.VITE_APP_BASE_API || '/api',
   timeout: 15000
 })
 

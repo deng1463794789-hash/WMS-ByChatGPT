@@ -1,7 +1,7 @@
 <template>
   <LoadingBar ref="loadingBarRef" />
   <router-view v-slot="{ Component }">
-    <transition name="fade-transform" mode="out-in">
+    <transition name="app-shell" appear>
       <component :is="Component" />
     </transition>
   </router-view>
@@ -22,29 +22,34 @@ onMounted(() => {
 </script>
 
 <style>
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  font-family: "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #0f172a;
+  background: #eef3f8;
 }
 
 #app {
   height: 100%;
 }
 
-.fade-transform-enter-active,
-.fade-transform-leave-active {
-  transition: all 0.3s ease;
+.app-shell-enter-active,
+.app-shell-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.fade-transform-enter-from {
+.app-shell-enter-from {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateY(10px) scale(0.99);
+
 }
 
-.fade-transform-leave-to {
+.app-shell-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateY(-8px) scale(0.995);
+
 }
 </style>

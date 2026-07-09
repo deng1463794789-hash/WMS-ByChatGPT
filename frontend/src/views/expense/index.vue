@@ -185,6 +185,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'ExpenseList' })
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'

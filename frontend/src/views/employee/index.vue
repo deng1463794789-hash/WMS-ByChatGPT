@@ -151,6 +151,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'EmployeeList' })
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'

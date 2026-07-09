@@ -65,6 +65,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'InventoryStock' })
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import SearchForm, { type SearchField } from '@/components/SearchForm/index.vue'

@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router'
 import { getToken } from '@/utils/storage'
+import { preloadRouteComponents } from './routes'
 
 const whiteList = ['/login']
 
@@ -12,7 +13,7 @@ export function setLoadingBar(bar: { start: () => void; done: () => void }) {
 export function setupRouterGuards(router: Router) {
   router.beforeEach((to, _from, next) => {
     loadingBar?.start()
-    document.title = `${to.meta.title || 'WMS管理系统'} - WMS`
+    document.title = `${to.meta.title || 'WMS 管理系统'} - WMS`
 
     const token = getToken()
     if (token) {
@@ -20,6 +21,7 @@ export function setupRouterGuards(router: Router) {
         next({ path: '/' })
       } else {
         next()
+        preloadRouteComponents()
       }
     } else {
       if (whiteList.includes(to.path)) {

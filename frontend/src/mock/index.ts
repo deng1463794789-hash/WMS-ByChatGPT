@@ -2,12 +2,18 @@ import { getToken } from '@/utils/storage'
 
 const MOCK_FLAG_KEY = '__wms_mock_mode__'
 
+export function isMockAvailable(): boolean {
+  return import.meta.env.VITE_APP_ENABLE_MOCK === 'true'
+}
+
 export function isMockEnabled(): boolean {
-  return localStorage.getItem(MOCK_FLAG_KEY) === 'true'
+  return isMockAvailable() && localStorage.getItem(MOCK_FLAG_KEY) === 'true'
 }
 
 export function enableMock(): void {
-  localStorage.setItem(MOCK_FLAG_KEY, 'true')
+  if (isMockAvailable()) {
+    localStorage.setItem(MOCK_FLAG_KEY, 'true')
+  }
 }
 
 export function disableMock(): void {

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final String DEFAULT_ADMIN_USERNAME = "admin";
+    private static final String DEFAULT_ADMIN_PASSWORD = "admin123";
 
     private final SysUserMapper sysUserMapper;
     private final PasswordEncoder passwordEncoder;
@@ -26,11 +28,11 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         SysUser admin = sysUserMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, "admin"));
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, DEFAULT_ADMIN_USERNAME));
         if (admin == null) {
             SysUser user = new SysUser();
-            user.setUsername("admin");
-            user.setPassword(passwordEncoder.encode("admin123"));
+            user.setUsername(DEFAULT_ADMIN_USERNAME);
+            user.setPassword(passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
             user.setRealName("System Administrator");
             user.setPhone("13600136001");
             user.setEmail("admin@wms.com");
@@ -38,6 +40,16 @@ public class DataInitializer implements ApplicationRunner {
             user.setStatus("active");
             sysUserMapper.insert(user);
             log.info("Default admin account initialized: admin / admin123");
+            return;
+        }
+
+        if (!passwordEncoder.matches(DEFAULT_ADMIN_PASSWORD, admin.getPassword())) {
+            admin.setPassword(passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
+            if (admin.getStatus() == null || admin.getStatus().isBlank()) {
+                admin.setStatus("active");
+            }
+            sysUserMapper.updateById(admin);
+            log.warn("Default admin password was invalid and has been reset to admin123");
         }
     }
 }

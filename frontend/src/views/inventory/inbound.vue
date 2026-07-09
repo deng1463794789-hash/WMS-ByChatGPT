@@ -101,6 +101,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'InventoryInbound' })
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import SearchForm, { type SearchField } from '@/components/SearchForm/index.vue'

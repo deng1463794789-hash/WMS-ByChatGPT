@@ -319,7 +319,7 @@ CREATE TABLE IF NOT EXISTS wms_outbound_item (
 
 -- 初始管理员用户 (密码: admin123, BCrypt 加密)
 INSERT IGNORE INTO wms_user (username, password, real_name, phone, email, role_id, status) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5Eh', '系统管理员', '13600136001', 'admin@wms.com', 1, 'active');
+('admin', '$2a$10$ESuCbYXaXvD54Eg6OMq5GeJcG1deK3e4T.dofWJZbxELfHZ8fH7pi', '系统管理员', '13600136001', 'admin@wms.com', 1, 'active');
 
 -- 初始角色
 INSERT IGNORE INTO wms_role (code, name, description) VALUES

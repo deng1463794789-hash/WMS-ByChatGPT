@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+
+defineOptions({ name: 'SystemSetting' })
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getSysSetting, updateSysSetting } from '@/api/system'
